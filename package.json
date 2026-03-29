@@ -1,0 +1,23 @@
+{
+  "name": "storyline-studios-monolith",
+  "version": "1.0.0",
+  "description": "Storyline Studios - Cinematographic Photography & Videography",
+  "main": "server/server.js",
+  "scripts": {
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build",
+    "dev": "cd server && npm run dev",
+    "start": "cd server && node server.js",
+    "build:full": "npm run install:all && npm run build",
+    "deploy": "npm run build:full && npm start"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {},
+  "author": "Storyline Studios",
+  "license": "MIT"
+}
