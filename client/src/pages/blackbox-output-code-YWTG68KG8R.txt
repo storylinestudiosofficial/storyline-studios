@@ -1,0 +1,89 @@
+import React, { useState, useEffect } from 'react';
+import PortfolioGrid from '../components/PortfolioGrid';
+
+const Home = () => {
+  const [showPortfolio, setShowPortfolio] = useState(false);
+  const [portfolio, setPortfolio] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  useEffect(() => {
+    fetchPortfolio();
+  }, [activeCategory]);
+
+  const fetchPortfolio = async () => {
+    const res = await fetch(`/api/portfolio/${activeCategory === 'All' ? '' : activeCategory}`);
+    const data = await res.json();
+    setPortfolio(data);
+  };
+
+  return (
+    <div className="relative overflow-hidden">
+      {/* Hero Section */}
+      <div className="relative h-screen flex items-center justify-center">
+        <video
+          autoPlay
+          muted
+          loop
+          className="absolute inset-0 w-full h-full object-cover opacity-50"
+        >
+          <source src="/videos/hero-reel.mp4" type="video/mp4" />
+        </video>
+        
+        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+          <div className="bg-black/70 backdrop-blur-xl border border-cyan-400/30 rounded-2xl p-12 shadow-2xl">
+            <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+              Every Moment Has A Story
+            </h1>
+            <p className="text-xl md:text-2xl mb-12 opacity-90 font-light">
+              Let Us Tell Yours
+            </p>
+            <a
+              href="/book"
+              className="inline-block bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-12 py-6 rounded-2xl text-xl font-semibold shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 border-2 border-cyan-400/50"
+            >
+              Book Storyline Studios
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Portfolio Trigger */}
+      {!showPortfolio && (
+        <div className="py-20 text-center">
+          <button
+            onClick={() => setShowPortfolio(true)}
+            className="text-2xl md:text-3xl font-semibold px-12 py-6 bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/40 hover:to-blue-600/40 rounded-2xl border-2 border-cyan-400/50 transition-all duration-300 backdrop-blur-sm"
+          >
+            See Storyline Studios Portfolio
+          </button>
+        </div>
+      )}
+
+      {/* Portfolio Grid */}
+      {showPortfolio && (
+        <div className="py-20 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-wrap gap-4 justify-center mb-12">
+              {['All', 'Wedding', 'Debut', 'Birthday', 'Proposal', 'Corporate'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 ${
+                    activeCategory === cat
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-xl scale-105'
+                      : 'bg-white/10 hover:bg-white/20 border-2 border-white/20 hover:border-cyan-400/50'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <PortfolioGrid items={portfolio} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Home;
