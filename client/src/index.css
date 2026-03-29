@@ -1,9 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
 
 @layer base {
   html {
@@ -11,7 +8,7 @@
   }
   
   body {
-    @apply bg-deep-black text-white font-sans antialiased;
+    @apply bg-black text-white font-sans antialiased;
   }
 }
 
@@ -21,7 +18,7 @@
   }
   
   .auth-btn {
-    @apply w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 p-5 rounded-2xl font-semibold text-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 border-2 border-cyan-400/50;
+    @apply w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 p-5 rounded-2xl font-semibold text-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 border-2 border-cyan-400/50 flex items-center justify-center text-center;
   }
   
   .hero-gradient {
