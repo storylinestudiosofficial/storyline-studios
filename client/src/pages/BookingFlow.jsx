@@ -47,21 +47,48 @@ const BookingFlow = () => {
   };
 
   const submitBooking = async () => {
-    const finalData = { ...formData, package: packageSelected, receiptUrl };
+    // 1. Siguraduhin na nakuha lahat ng data
+    const bookingData = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      date: formData.date,
+      eventLocation: formData.eventLocation,
+      eventType: formData.eventType,
+      package: {
+        type: packageSelected.type,
+        price: packageSelected.price,
+        inclusions: packageSelected.inclusions || []
+      },
+      receiptUrl: receiptUrl,
+      age: formData.age ? parseInt(formData.age) : 0,
+      total: packageSelected.price
+    };
+
     setIsUploading(true);
+    console.log('🚀 Sending this to server:', bookingData);
 
     try {
-      const res = await fetch('/api/bookings', {
+      const response = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalData)
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData)
       });
-      if (res.ok) {
-        alert("✅ Booking Confirmed! Redirecting...");
-        window.location.href = "/";
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('🎉 Booking confirmed! Returning to home...');
+        window.location.href = '/';
+      } else {
+        // Kung may error sa server, lilitaw dito
+        alert('❌ Server Error: ' + (result.error || 'Unknown error'));
       }
-    } catch (err) {
-      alert("Error saving booking.");
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      alert('❌ Failed to connect to server. Please try again.');
     } finally {
       setIsUploading(false);
     }
