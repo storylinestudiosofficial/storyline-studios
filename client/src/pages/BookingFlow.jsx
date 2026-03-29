@@ -128,7 +128,7 @@ const BookingFlow = () => {
           <div className="bg-gradient-to-br from-gray-900 to-black p-8 rounded-3xl border border-cyan-400/30 shadow-2xl">
             <p className="text-gray-400 mb-2">Send ₱1,000 Reservation Fee to:</p>
             <h3 className="text-3xl font-bold text-cyan-400 mb-1">GCASH</h3>
-            <p className="text-2xl font-mono tracking-tighter">09XX - XXX - XXXX</p>
+            <p className="text-2xl font-mono tracking-tighter">09286675952</p>
             <p className="text-sm text-gray-500 mt-4 italic">Note: Screenshot of receipt is required to lock your date.</p>
           </div>
           
