@@ -1,108 +1,111 @@
-import React, { useState } from 'react';
+{/* ✅ STEP 5: PAYMENT + QR + CLOUDINARY UPLOAD */}
+{step === 5 && (
+  <div className="max-w-2xl mx-auto space-y-8">
+    <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent">
+      💳 Secure Your ₱1,000 Reservation
+    </h2>
+    
+    {/* Package Summary */}
+    <div className="p-8 bg-gradient-to-br from-black/50 to-gray-900/50 border-2 border-cyan-400/30 rounded-3xl">
+      <h3 className="text-2xl font-bold mb-4 text-cyan-400">Your Package:</h3>
+      <div className="text-xl">
+        📦 Package {packageSelected?.type} – ₱{packageSelected?.price?.toLocaleString()}
+      </div>
+    </div>
 
-const BookingFlow = () => {
-  const [step, setStep] = useState(1);
-  const [isUploading, setIsUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '', email: '', date: '', location: '', package: null, receiptUrl: ''
-  });
+    {/* ✅ GCASH QR CODE - VITE PUBLIC PATH */}
+    <div className="text-center p-8 bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border-2 border-emerald-400/30 rounded-3xl">
+      <div className="text-2xl font-bold mb-6 text-emerald-400 flex items-center justify-center">
+        📱 Scan QR Code → Pay ₱1,000
+      </div>
+      
+      {/* ✅ CORRECT VITE PUBLIC PATH */}
+      <div className="bg-white/20 p-8 rounded-3xl border-4 border-white/30 mx-auto max-w-md backdrop-blur-xl shadow-2xl">
+        <img 
+          src="/IMG_7162.jpg"  // ✅ Vite serves from public/ automatically
+          alt="Storyline Studios GCash QR Code"
+          className="w-72 h-72 mx-auto rounded-2xl shadow-xl border-4 border-white/50 object-contain"
+          onError={(e) => {
+            e.target.src = 'https://via.placeholder.com/288x288/00d4ff/000000?text=GCash+QR';
+            console.log('QR fallback loaded');
+          }}
+        />
+      </div>
+      
+      <div className="mt-6 p-4 bg-black/60 rounded-2xl border border-emerald-400/50">
+        <div className="font-bold text-lg text-emerald-300 mb-2">Storyline Studios</div>
+        <div className="text-sm text-gray-300">09286675952</div>
+        <div className="text-xs text-gray-400 mt-2">Reservation Fee: ₱1,000</div>
+      </div>
+    </div>
 
-  const packages = [
-    { type: 'A', price: 2399, inclusions: ['Up to 6 hours', '1 Photographer', 'Unlimited'] },
-    { type: 'B', price: 4000, inclusions: ['Up to 6 hours', '1 Photographer', 'Unlimited'] },
-    { type: 'C', price: 6000, inclusions: ['Up to 8 hours', '1 Photographer 1 Videographer', 'Unlimited'] },
-    { type: 'D', price: 7999, inclusions: ['Up to 8 hours', '1 Photographer 1 Videographer', 'Unlimited'] }
-  ];
-
-  // CLOUDINARY UPLOAD LOGIC
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const data = new FormData();
-    data.append("file", file);
-    data.append("upload_preset", "your_preset_here"); // PALITAN MO ITO NG PRESET MO
-    data.append("folder", "storyline_receipts");
-
-    try {
-      const res = await fetch("https://api.cloudinary.com/v1_1/dhfdcigsm/image/upload", { // PALITAN MO 'YUNG your_cloud_name
-        method: "POST",
-        body: data
-      });
-      const fileData = await res.json();
-      setFormData({ ...formData, receiptUrl: fileData.secure_url });
-      alert("Receipt Uploaded Successfully!");
-    } catch (err) {
-      console.error("Upload Error:", err);
-      alert("Upload failed. Please try again.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const submitBooking = async () => {
-    if (!formData.receiptUrl) return alert("Please upload your payment receipt first.");
-    // Submit to your MongoDB backend here
-    alert("Booking Submitted! Check your email for confirmation.");
-    window.location.href = "/";
-  };
-
-  return (
-    <div className="min-h-screen py-20 px-4 bg-deep-black text-white">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-10 text-cyan-400">Step {step} of 5</h1>
-
-        {/* STEPS 1-3: CLIENT INFO */}
-        {step === 1 && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <h2 className="text-2xl font-bold">What's your name?</h2>
-            <input type="text" className="auth-input" placeholder="Full Name" onChange={(e)=>setFormData({...formData, name: e.target.value})} />
-            <button onClick={()=>setStep(2)} className="auth-btn">Next</button>
-          </div>
-        )}
-
-        {/* STEP 4: PACKAGES */}
-        {step === 4 && (
-          <div className="animate-in fade-in">
-            <h2 className="text-3xl font-bold mb-8 text-center">Choose Your Package</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {packages.map(pkg => (
-                <div key={pkg.type} onClick={()=>setFormData({...formData, package: pkg})}
-                  className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${formData.package?.type === pkg.type ? 'border-cyan-400 bg-cyan-950/30' : 'border-gray-800'}`}>
-                  <h3 className="text-xl font-bold text-cyan-400">Package {pkg.type}</h3>
-                  <p className="text-lg font-bold mb-4">₱{pkg.price.toLocaleString()}</p>
-                  <ul className="text-xs text-gray-400 space-y-1">{pkg.inclusions.map(i => <li key={i}>• {i}</li>)}</ul>
-                </div>
-              ))}
-            </div>
-            <div className="mt-10 flex justify-between">
-              <button onClick={()=>setStep(3)} className="text-gray-400">← Back</button>
-              <button onClick={()=>setStep(5)} disabled={!formData.package} className="auth-btn max-w-[200px]">Next: Payment</button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 5: PAYMENT & CLOUDINARY */}
-        {step === 5 && (
-          <div className="text-center bg-black/50 p-10 rounded-3xl border border-cyan-400/20">
-            <h2 className="text-2xl font-bold mb-6">Scan to Pay via GCash</h2>
-            <img src="/IMG_7162.jpg" alt="GCash QR" className="w-64 h-64 mx-auto mb-6 rounded-xl border-4 border-white" />
-            <p className="text-xl font-mono text-cyan-400 mb-8 tracking-widest uppercase font-bold">09286675952</p>
-            
-            <div className="max-w-xs mx-auto space-y-4">
-              <label className="block text-sm text-gray-400">Upload Receipt Screenshot:</label>
-              <input type="file" onChange={handleFileUpload} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-cyan-500 file:text-white" />
-              <button onClick={submitBooking} disabled={isUploading || !formData.receiptUrl} className="auth-btn mt-6">
-                {isUploading ? "Uploading..." : "Confirm & Submit"}
+    {/* ✅ RECEIPT UPLOAD */}
+    <div className="p-8 bg-gradient-to-br from-gray-900/50 to-black/50 border-2 border-purple-500/30 rounded-3xl">
+      <label className="block text-2xl font-bold mb-6 text-purple-400 text-center">
+        📸 Upload Your Payment Receipt
+      </label>
+      
+      <div className="relative">
+        <input
+          id="receipt-upload"
+          type="file"
+          accept="image/jpeg,image/png,image/heic"
+          onChange={handleReceiptUpload}
+          className="w-full p-8 text-xl bg-black/60 border-4 border-dashed border-purple-500/50 rounded-3xl file:mr-6 file:py-4 file:px-10 file:rounded-2xl file:border-0 file:font-bold file:bg-gradient-to-r file:from-purple-500 file:to-purple-600 file:text-lg file:text-white file:shadow-lg hover:file:shadow-xl hover:file:from-purple-600 hover:file:to-purple-700 cursor-pointer transition-all duration-300 focus:outline-none focus:border-purple-400"
+          required
+        />
+        
+        {receiptFile && (
+          <div className="mt-6 p-6 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-400/50 rounded-2xl animate-pulse">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-bold text-lg text-green-400">✅ Receipt Ready</div>
+                <div className="text-green-300">{receiptFile.name}</div>
+                <div className="text-sm text-green-200">Size: {(receiptFile.size / 1024).toFixed(1)} KB</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReceiptFile(null)}
+                className="px-4 py-2 bg-red-500/80 hover:bg-red-600 text-white rounded-xl text-sm font-bold transition-colors"
+              >
+                ✕ Remove
               </button>
-              <button onClick={()=>setStep(4)} className="block mx-auto text-gray-500 text-sm">Wait, I want to change package</button>
             </div>
           </div>
         )}
       </div>
     </div>
-  );
-};
 
-export default BookingFlow;
+    {/* Action Buttons */}
+    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <button
+        onClick={prevStep}
+        className="flex-1 px-12 py-6 bg-gray-800/60 hover:bg-gray-700/80 border-2 border-gray-600/50 rounded-3xl font-bold text-xl transition-all duration-300 hover:scale-105"
+      >
+        ← Back to Packages
+      </button>
+      <button
+        onClick={submitPayment}
+        disabled={!receiptFile || isUploading}
+        className="flex-1 px-12 py-6 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-emerald-400/50 rounded-3xl font-bold text-xl shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center"
+      >
+        {isUploading ? (
+          <>
+            <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full mr-3" />
+            Verifying Payment...
+          </>
+        ) : (
+          '✅ Confirm & Reserve Slot'
+        )}
+      </button>
+    </div>
+
+    {/* Success Message */}
+    {isUploading && (
+      <div className="p-6 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-400/50 rounded-3xl text-center">
+        <div className="text-lg font-bold text-blue-300 mb-2">⏳ Processing...</div>
+        <div className="text-blue-200">Receipt uploading to Cloudinary → Saving to database → Slot reserved!</div>
+      </div>
+    )}
+  </div>
+)}
