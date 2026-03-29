@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path'); // Isang beses lang dapat ito
+const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const Booking = require('./models/Booking');
 const Portfolio = require('./models/Portfolio');
@@ -19,7 +19,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Importante: Siguraduhing may "uploads" folder sa loob ng server folder
+// 1. Static folder para sa uploaded receipts
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Database Connection
@@ -34,13 +34,17 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// --- API ROUTES ---
+// --- API ROUTES (Dapat laging mauna ito bago ang Static Files) ---
 
 app.get('/api/portfolio/:category?', async (req, res) => {
-  const { category } = req.params;
-  const query = category && category !== 'All' ? { category } : {};
-  const portfolio = await Portfolio.find(query);
-  res.json(portfolio);
+  try {
+    const { category } = req.params;
+    const query = category && category !== 'All' ? { category } : {};
+    const portfolio = await Portfolio.find(query);
+    res.json(portfolio);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/bookings', upload.single('receipt'), async (req, res) => {
@@ -90,12 +94,19 @@ async function uploadToCloudinary(filePath) {
   }
 }
 
-// --- DEPLOYMENT SETTINGS ---
+// --- FRONTEND SERVING (The Monolith Part) ---
 
 const PORT = process.env.PORT || 10000;
 
-// Dahil ang Render "Root Directory" mo ay 'server', 
-// gagamit lang tayo ng API routes dito. 
-// Ang Frontend (React) ay dapat naka-deploy bilang "Static Site" sa Render.
+// 2. Ituro ang Express sa folder kung nasaan ang "Build" ng React (dist)
+// Dahil ang server.js ay nasa loob ng 'server' folder, kailangang lumabas (..) para mahanap ang 'client'
+const distPath = path.join(__dirname, '../client/dist');
+
+app.use(express.static(distPath));
+
+// Lahat ng hindi API request ay ibabato sa React Frontend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
