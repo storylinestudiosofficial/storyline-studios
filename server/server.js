@@ -58,5 +58,15 @@ app.get('/api/calendar', async (req, res) => {
     .map(b => b.event.date.toISOString().split('T')[0]);
   res.json(confirmedDates);
 });
-
+async function uploadToCloudinary(filePath) {
+  try {
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: 'storyline_receipts',
+    });
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary Upload Error:', error);
+    return null;
+  }
+}
 app.listen(5000, () => console.log('Server running on port 5000'));
