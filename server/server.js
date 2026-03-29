@@ -64,6 +64,41 @@ app.get('/api/calendar', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});// 1. Dito mo i-setup ang Transporter (Dito ang Password)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'zayofficialportfolio@gmail.com', // Ang email mo
+    pass: 'lkomihuqpsfuwavg'               // <--- DITO MO ILALAGAY YUNG 16-DIGIT APP PASSWORD
+  }
+});
+
+// 2. Pagkatapos ng Transporter, tsaka susunod yung PATCH Route (yung pinadala mo)
+app.patch('/api/bookings/confirm/:id', async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id, 
+      { 'status.verified': true }, 
+      { new: true }
+    );
+
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    const mailOptions = {
+      from: '"Storyline Studios" <zayofficialportfolio@gmail.com>',
+      to: booking.email,
+      subject: '✅ Booking Confirmed - Storyline Studios',
+      // ... (tuloy-tuloy na yung html code dito)
+    };
+
+    // Ito ang mag-uutos sa transporter na i-send ang mail
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Confirmed and Email Sent!' });
+
+  } catch (error) {
+    console.error("Email Error:", error);
+    res.status(500).json({ message: 'Error confirming booking' });
+  }
 });
 
 app.get('/api/portfolio/:category?', async (req, res) => {
