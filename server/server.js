@@ -1,23 +1,31 @@
-const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
+const path = require('path'); // Isang beses lang dapat ito
 const cloudinary = require('cloudinary').v2;
 const Booking = require('./models/Booking');
 const Portfolio = require('./models/Portfolio');
 require('dotenv').config();
+
+// Cloudinary Config
 cloudinary.config({ 
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
   api_key: process.env.CLOUDINARY_API_KEY, 
   api_secret: process.env.CLOUDINARY_API_SECRET 
 });
+
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/storyline-studios');
+// Importante: Siguraduhing may "uploads" folder sa loob ng server folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Database Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB Atlas!'))
+  .catch(err => console.error('MongoDB Connection Error:', err));
 
 // Multer config for receipt uploads
 const storage = multer.diskStorage({
@@ -26,7 +34,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Routes
+// --- API ROUTES ---
+
 app.get('/api/portfolio/:category?', async (req, res) => {
   const { category } = req.params;
   const query = category && category !== 'All' ? { category } : {};
@@ -35,16 +44,20 @@ app.get('/api/portfolio/:category?', async (req, res) => {
 });
 
 app.post('/api/bookings', upload.single('receipt'), async (req, res) => {
-  const bookingData = req.body;
-  const receiptUrl = req.file ? await uploadToCloudinary(req.file.path) : null;
-  
-  const booking = new Booking({
-    ...JSON.parse(bookingData.bookingData),
-    receipt: receiptUrl
-  });
-  
-  await booking.save();
-  res.json({ success: true, bookingId: booking._id });
+  try {
+    const bookingData = req.body;
+    const receiptUrl = req.file ? await uploadToCloudinary(req.file.path) : null;
+    
+    const booking = new Booking({
+      ...JSON.parse(bookingData.bookingData),
+      receipt: receiptUrl
+    });
+    
+    await booking.save();
+    res.json({ success: true, bookingId: booking._id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/bookings/verify/:id', async (req, res) => {
@@ -63,6 +76,8 @@ app.get('/api/calendar', async (req, res) => {
     .map(b => b.event.date.toISOString().split('T')[0]);
   res.json(confirmedDates);
 });
+
+// Cloudinary Upload Function
 async function uploadToCloudinary(filePath) {
   try {
     const result = await cloudinary.uploader.upload(filePath, {
@@ -74,22 +89,13 @@ async function uploadToCloudinary(filePath) {
     return null;
   }
 }
-const PORT = process.env.PORT || 5000;
-const path = require('path');
 
-// Eto ang magsasabi sa server na "serve" ang frontend files
-app.use(express.static(path.join(__dirname, 'client/dist'))); // O kung nasaan ang index.html mo
+// --- DEPLOYMENT SETTINGS ---
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
-});
-// 1. Sabihin sa Express kung nasaan ang mga "static" files (images, css, js)
-app.use(express.static(path.join(__dirname, 'dist')));
+const PORT = process.env.PORT || 10000;
 
-// 2. Kapag binisita ang main link, ibigay ang index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
+// Dahil ang Render "Root Directory" mo ay 'server', 
+// gagamit lang tayo ng API routes dito. 
+// Ang Frontend (React) ay dapat naka-deploy bilang "Static Site" sa Render.
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
