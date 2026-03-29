@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -82,4 +83,13 @@ app.use(express.static(path.join(__dirname, 'client/dist'))); // O kung nasaan a
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
 });
+// 1. Sabihin sa Express kung nasaan ang mga "static" files (images, css, js)
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// 2. Kapag binisita ang main link, ibigay ang index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
