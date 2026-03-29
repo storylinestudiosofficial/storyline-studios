@@ -47,10 +47,10 @@ export default function BookingFlow() {
 
     const data = new FormData();
     data.append("file", receipt);
-    data.append("upload_preset", "storyline_receipts");
+    data.append("upload_preset", "storyline_receipts"); 
 
     const res = await fetch(
-      "https://api.cloudinary.com/v1_1/dhfdcigsm/image/upload",
+      "https://api.cloudinary.com/v1_1/dhfdcigsm/image/upload", // 🔴 PALITAN MO ITO NG CLOUD NAME MO
       {
         method: "POST",
         body: data,
@@ -84,20 +84,20 @@ export default function BookingFlow() {
         name: form.name,
         email: form.email,
         phone: form.phone,
-        date: new Date(form.date).toISOString(), // ✅ ISO
+        date: new Date(form.date).toISOString(), 
         eventLocation: form.eventLocation,
         eventType: form.eventType,
-        age: Number(form.age), // ✅ NUMBER
+        age: form.age ? Number(form.age) : 0,
 
         package: {
           type: selectedPackage.type,
-          price: Number(selectedPackage.price), // ✅ NUMBER
+          price: Number(selectedPackage.price),
           inclusions: selectedPackage.inclusions,
         },
 
         receiptUrl: receiptUrl,
 
-        total: Number(selectedPackage.price), // ✅ NUMBER
+        total: Number(selectedPackage.price),
 
         status: {
           paid: true,
@@ -121,12 +121,12 @@ export default function BookingFlow() {
       }
 
       // 4. Success
-      alert("Booking successful!");
+      alert("🎉 Booking successful for Storyline Studios!");
       window.location.href = "/";
 
     } catch (err) {
       console.error(err);
-      alert(err.message || "Something went wrong");
+      alert(err.message || "❌ Something went wrong with your booking");
     } finally {
       setLoading(false);
     }
@@ -137,146 +137,143 @@ export default function BookingFlow() {
   const prevStep = () => setStep((prev) => prev - 1);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
-      <div className="bg-white w-full max-w-2xl p-6 rounded-xl shadow">
+    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6 text-black">
+      <div className="bg-white w-full max-w-2xl p-8 rounded-xl shadow-lg">
 
-        <h1 className="text-2xl font-bold mb-4">
+        <h1 className="text-3xl font-bold mb-6 text-black text-center">
           Storyline Studios Booking
         </h1>
 
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-gray-500 mb-6 text-center">
           Step {step} of 5
         </p>
 
         {/* STEP 1: BASIC INFO */}
         {step === 1 && (
-          <div className="space-y-3">
-            <input name="name" placeholder="Full Name" className="input" onChange={handleChange} />
-            <input name="email" placeholder="Email" className="input" onChange={handleChange} />
-            <input name="phone" placeholder="Phone" className="input" onChange={handleChange} />
+          <div className="space-y-4 animate-fadeIn">
+            <input name="name" placeholder="Full Name" className="p-3 border rounded-lg w-full" style={{ color: 'black' }} onChange={handleChange} />
+            <input name="email" placeholder="Email" className="p-3 border rounded-lg w-full" style={{ color: 'black' }} onChange={handleChange} />
+            <input name="phone" placeholder="Phone" className="p-3 border rounded-lg w-full" style={{ color: 'black' }} onChange={handleChange} />
 
-            <button className="btn" onClick={nextStep}>
-              Next
+            <button className="w-full py-3 bg-black text-white rounded-lg font-bold" onClick={nextStep}>
+              Next Step
             </button>
           </div>
         )}
 
         {/* STEP 2: EVENT DETAILS */}
         {step === 2 && (
-          <div className="space-y-3">
-            <input type="date" name="date" className="input" onChange={handleChange} />
-            <input name="eventLocation" placeholder="Event Location" className="input" onChange={handleChange} />
-            <input name="eventType" placeholder="Event Type" className="input" onChange={handleChange} />
-            <input name="age" placeholder="Age" className="input" onChange={handleChange} />
+          <div className="space-y-4 animate-fadeIn">
+            <input type="date" name="date" className="p-3 border rounded-lg w-full" style={{ color: 'black' }} onChange={handleChange} />
+            <input name="eventLocation" placeholder="Event Location" className="p-3 border rounded-lg w-full" style={{ color: 'black' }} onChange={handleChange} />
+            <input name="eventType" placeholder="Event Type" className="p-3 border rounded-lg w-full" style={{ color: 'black' }} onChange={handleChange} />
+            <input name="age" placeholder="Celebrant's Age" className="p-3 border rounded-lg w-full" style={{ color: 'black' }} type="number" onChange={handleChange} />
 
-            <div className="flex justify-between">
-              <button className="btn-secondary" onClick={prevStep}>Back</button>
-              <button className="btn" onClick={nextStep}>Next</button>
+            <div className="flex justify-between gap-3">
+              <button className="px-6 py-3 bg-gray-300 rounded-lg font-bold text-black" onClick={prevStep}>Back</button>
+              <button className="flex-1 py-3 bg-black text-white rounded-lg font-bold" onClick={nextStep}>Next Step</button>
             </div>
           </div>
         )}
 
         {/* STEP 3: PACKAGE */}
         {step === 3 && (
-          <div className="space-y-3">
+          <div className="space-y-4 animate-fadeIn">
             {packages.map((pkg, i) => (
               <div
                 key={i}
                 onClick={() => setSelectedPackage(pkg)}
-                className={`p-3 border rounded cursor-pointer ${
+                className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
                   selectedPackage?.type === pkg.type
-                    ? "border-blue-500 bg-blue-50"
-                    : ""
+                    ? "border-blue-500 bg-blue-50 text-blue-900 shadow-inner"
+                    : "border-gray-200 text-black hover:border-blue-400"
                 }`}
               >
-                <h3 className="font-bold">{pkg.type}</h3>
-                <p>₱{pkg.price}</p>
-                <ul className="text-sm">
+                <div className="flex justify-between">
+                  <h3 className="font-bold text-lg">{pkg.type}</h3>
+                  <p className="font-bold text-lg text-black">₱{pkg.price}</p>
+                </div>
+                <ul className="text-sm mt-2 list-disc list-inside text-gray-700">
                   {pkg.inclusions.map((inc, idx) => (
-                    <li key={idx}>• {inc}</li>
+                    <li key={idx}>{inc}</li>
                   ))}
                 </ul>
               </div>
             ))}
 
-            <div className="flex justify-between">
-              <button className="btn-secondary" onClick={prevStep}>Back</button>
-              <button className="btn" onClick={nextStep}>Next</button>
+            <div className="flex justify-between gap-3">
+              <button className="px-6 py-3 bg-gray-300 rounded-lg font-bold text-black" onClick={prevStep}>Back</button>
+              <button className="flex-1 py-3 bg-black text-white rounded-lg font-bold disabled:opacity-50" disabled={!selectedPackage} onClick={nextStep}>Next Step</button>
             </div>
           </div>
         )}
 
         {/* STEP 4: PAYMENT */}
         {step === 4 && (
-          <div className="text-center space-y-4">
-            <p className="font-medium">Scan to Pay</p>
+          <div className="text-center space-y-6 animate-fadeIn">
+            <p className="font-bold text-xl text-emerald-600">Scan QR to Pay Reservation Fee</p>
 
             <img
               src="/IMG_7162.jpg"
-              alt="QR Code"
-              className="w-40 mx-auto"
+              alt="Storyline Studios QR Code"
+              className="w-64 mx-auto rounded-xl shadow-lg border-2 border-gray-100 object-contain"
+              onError={(e) => { e.target.src = "https://via.placeholder.com/300?text=QR+Code+Not+Found"; }}
             />
 
-            <input
-              type="file"
-              onChange={(e) => setReceipt(e.target.files[0])}
-              className="mx-auto"
-            />
+            <div className="p-4 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+              <label className="block text-sm text-gray-700 mb-3">Upload Payment Proof (Screenshot)</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setReceipt(e.target.files[0])}
+                className="mx-auto text-black"
+                style={{ color: 'black' }}
+              />
+            </div>
 
-            <div className="flex justify-between">
-              <button className="btn-secondary" onClick={prevStep}>Back</button>
-              <button className="btn" onClick={nextStep}>Next</button>
+            <div className="flex justify-between gap-3">
+              <button className="px-6 py-3 bg-gray-300 rounded-lg font-bold text-black" onClick={prevStep}>Back</button>
+              <button className="flex-1 py-3 bg-black text-white rounded-lg font-bold disabled:opacity-50" disabled={!receipt} onClick={nextStep}>Verify & Next →</button>
             </div>
           </div>
         )}
 
         {/* STEP 5: CONFIRM */}
         {step === 5 && (
-          <div className="space-y-3">
-            <h2 className="font-semibold">Review & Confirm</h2>
+          <div className="space-y-6 animate-fadeIn text-black p-4 border-2 border-gray-100 rounded-xl bg-gray-50">
+            <h2 className="font-bold text-2xl text-cyan-600">Review Your Booking</h2>
+            
+            <div className="space-y-3 p-4 bg-white rounded-lg shadow-inner">
+              <p><strong>👤 Name:</strong> {form.name}</p>
+              <p><strong>📧 Email:</strong> {form.email}</p>
+              <p><strong>📅 Date:</strong> {form.date}</p>
+              <p><strong>📍 Location:</strong> {form.eventLocation}</p>
+              <p><strong>🎬 Package:</strong> {selectedPackage?.type} - (₱{selectedPackage?.price})</p>
+            </div>
 
-            <p><strong>Name:</strong> {form.name}</p>
-            <p><strong>Date:</strong> {form.date}</p>
-            <p><strong>Location:</strong> {form.eventLocation}</p>
-            <p><strong>Package:</strong> {selectedPackage?.type}</p>
-
-            <div className="flex justify-between">
-              <button className="btn-secondary" onClick={prevStep}>Back</button>
+            <div className="flex justify-between gap-3">
+              <button className="px-6 py-3 bg-gray-300 rounded-lg font-bold text-black" onClick={prevStep}>Back</button>
 
               <button
                 onClick={submitBooking}
                 disabled={loading}
-                className="btn"
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow-emerald-500/20 shadow-lg flex items-center justify-center gap-2"
               >
-                {loading ? "Processing..." : "Confirm Booking"}
+                {loading ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Processing...
+                  </>
+                ) : (
+                  <>✅ Confirm & Reserve Slot</>
+                )}
               </button>
             </div>
           </div>
         )}
 
       </div>
-
-      {/* 🔹 Tailwind Utility Classes */}
-      <style jsx>{`
-        .input {
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-        }
-        .btn {
-          width: 100%;
-          background: black;
-          color: white;
-          padding: 10px;
-          border-radius: 6px;
-        }
-        .btn-secondary {
-          background: #ddd;
-          padding: 10px;
-          border-radius: 6px;
-        }
-      `}</style>
+      
     </div>
   );
 }
