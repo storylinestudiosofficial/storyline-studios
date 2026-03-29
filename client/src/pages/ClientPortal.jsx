@@ -10,12 +10,15 @@ const ClientPortal = () => {
   }, [user]);
 
   const fetchBooking = async () => {
-    // Fetch user's booking from backend
-    const res = await fetch('/api/bookings/my-booking', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    });
-    const data = await res.json();
-    setBooking(data);
+    try {
+      const res = await fetch('/api/bookings/my-booking', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await res.json();
+      setBooking(data);
+    } catch (err) {
+      console.error("Error fetching booking:", err);
+    }
   };
 
   if (!user) {
@@ -47,12 +50,30 @@ const ClientPortal = () => {
       <div className="bg-gradient-to-br from-black to-gray-900 border border-cyan-400/30 rounded-3xl p-12 mb-12">
         <h2 className="text-2xl font-semibold mb-6">My Event</h2>
         <div className="grid md:grid-cols-2 gap-8 text-lg">
-          <div>Date: {booking?.event.date}</div>
-          <div>Location: {booking?.event.location}</div>
-          <div>Package: {booking?.package.type} (₱{booking?.package.price})</div>
-          <div>Status: {booking?.payment.status.retainerVerified ? 'Date Locked' : 'Pending Verification'}</div>
+          <div>Date: {booking?.event?.date || 'To be updated'}</div>
+          <div>Location: {booking?.event?.location || 'TBA'}</div>
+          <div>Package: {booking?.package?.type || 'Not selected'} (₱{booking?.package?.price || '0'})</div>
+          <div>Status: {booking?.payment?.status?.retainerVerified ? 'Date Locked' : 'Pending Verification'}</div>
         </div>
       </div>
 
       {/* Story Progress Bar */}
       <div className="bg-gradient-to-br from-black to-gray-900 border border-cyan-400/30 rounded-3xl p-12">
+        <h2 className="text-2xl font-semibold mb-6">Production Status</h2>
+        <div className="w-full bg-gray-800 rounded-full h-4 mb-4">
+          <div 
+            className="bg-cyan-500 h-4 rounded-full transition-all duration-500" 
+            style={{ width: booking?.payment?.status?.retainerVerified ? '25%' : '10%' }}
+          ></div>
+        </div>
+        <p className="text-gray-400">
+          {booking?.payment?.status?.retainerVerified 
+            ? 'We are currently preparing for your big day!' 
+            : 'Waiting for payment verification to lock your date.'}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default ClientPortal;
