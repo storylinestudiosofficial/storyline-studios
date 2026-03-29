@@ -1,175 +1,231 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from "react";
+import axios from "axios";
 
-const BookingFlow = () => {
-  const [step, setStep] = useState(1);
-  const [isUploading, setIsUploading] = useState(false);
-  const [receiptUrl, setReceiptUrl] = useState('');
-  const [packageSelected, setPackageSelected] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '', email: '', phone: '', date: '', eventLocation: '', eventType: '', age: ''
+export default function BookingFlow() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    date: "",
+    eventLocation: "",
+    eventType: "",
+    age: "",
   });
 
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [receipt, setReceipt] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // 🔹 SAMPLE PACKAGES (edit as needed)
   const packages = [
-    { type: 'A', price: 2399, inclusions: ['1 Photographer', '2hrs coverage', '10 edited photos'] },
-    { type: 'B', price: 4000, inclusions: ['1 Photographer', '4hrs coverage', '25 edited photos'] },
-    { type: 'C', price: 6000, inclusions: ['2 Photographers', '6hrs coverage', '50 edited photos'] },
-    { type: 'D', price: 7999, inclusions: ['2 Photographers + Video', '8hrs coverage', 'All raw files'] }
+    {
+      type: "Basic",
+      price: 5000,
+      inclusions: ["2 Hours Shoot", "50 Edited Photos"],
+    },
+    {
+      type: "Standard",
+      price: 10000,
+      inclusions: ["4 Hours Shoot", "100 Edited Photos", "Highlight Video"],
+    },
+    {
+      type: "Premium",
+      price: 20000,
+      inclusions: ["Whole Day Coverage", "Full Video", "Unlimited Photos"],
+    },
   ];
 
-  const updateField = (key, value) => setFormData(prev => ({ ...prev, [key]: value }));
-  const nextStep = () => setStep(prev => prev + 1);
-  const prevStep = () => setStep(prev => prev - 1);
+  // 🔹 Handle input changes
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const handleReceiptUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsUploading(true);
+  // 🔹 Upload to Cloudinary
+  const uploadToCloudinary = async () => {
+    if (!receipt) throw new Error("Please upload receipt");
 
     const data = new FormData();
-    data.append('file', file);
-    data.append('upload_preset', 'storyline_receipts'); 
+    data.append("file", receipt);
+    data.append("storyline_receipts", "YOUR_UPLOAD_PRESET"); // change this
 
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload`, {
-        method: 'POST',
-        body: data
-      });
-      const fileData = await res.json();
-      if (fileData.secure_url) {
-        setReceiptUrl(fileData.secure_url);
-        console.log("Upload Success:", fileData.secure_url);
-      }
+      const res = await axios.post(
+        "https://api.cloudinary.com/v1_1dhfdcigsm/image/upload", // change this
+        data
+      );
+      return res.data.secure_url;
     } catch (err) {
-      alert("Upload failed. Check your internet.");
-    } finally {
-      setIsUploading(false);
+      throw new Error("Cloudinary upload failed");
     }
   };
 
+  // 🔹 Submit Booking
   const submitBooking = async () => {
-    // 1. Siguraduhin na nakuha lahat ng data
-    const bookingData = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      date: formData.date,
-      eventLocation: formData.eventLocation,
-      eventType: formData.eventType,
-      package: {
-        type: packageSelected.type,
-        price: packageSelected.price,
-        inclusions: packageSelected.inclusions || []
-      },
-      receiptUrl: receiptUrl,
-      age: formData.age ? parseInt(formData.age) : 0,
-      total: packageSelected.price
-    };
-
-    setIsUploading(true);
-    console.log('🚀 Sending this to server:', bookingData);
-
     try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookingData)
-      });
+      setLoading(true);
 
-      const result = await response.json();
-      
-      if (response.ok) {
-        alert('🎉 Booking confirmed! Returning to home...');
-        window.location.href = '/';
-      } else {
-        // Kung may error sa server, lilitaw dito
-        alert('❌ Server Error: ' + (result.error || 'Unknown error'));
+      if (!selectedPackage) {
+        alert("Please select a package");
+        return;
       }
-    } catch (error) {
-      console.error('❌ Network error:', error);
-      alert('❌ Failed to connect to server. Please try again.');
+
+      // 1. Upload receipt first
+      const receiptUrl = await uploadToCloudinary();
+
+      // 2. Prepare payload (FIXED TYPES)
+      const payload = {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        date: new Date(form.date).toISOString(), // ✅ ISO STRING
+        eventLocation: form.eventLocation,
+        eventType: form.eventType,
+        age: Number(form.age), // ✅ NUMBER
+
+        package: {
+          type: selectedPackage.type,
+          price: Number(selectedPackage.price), // ✅ NUMBER
+          inclusions: selectedPackage.inclusions,
+        },
+
+        receiptUrl: receiptUrl,
+
+        total: Number(selectedPackage.price), // ✅ NUMBER
+
+        status: {
+          paid: true,
+          verified: false,
+        },
+      };
+
+      // 3. Send to backend
+      await axios.post(
+        "/api/bookings", // 🔴 CHANGE THIS
+        payload
+      );
+
+      // 4. Success
+      alert("Booking successful!");
+      window.location.href = "/"; // ✅ REDIRECT
+
+    } catch (err) {
+      console.error(err);
+      alert(
+        err.response?.data?.message ||
+          err.message ||
+          "Booking failed"
+      ); // ✅ SHOW SERVER ERROR
     } finally {
-      setIsUploading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen py-10 px-4 max-w-2xl mx-auto text-white">
-      {/* Progress Bar */}
-      <div className="flex justify-between mb-10 text-xs font-bold">
-        {[1, 2, 3, 4, 5].map(s => (
-          <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center ${step === s ? 'bg-cyan-500' : 'bg-gray-800'}`}>{s}</div>
-        ))}
-      </div>
+    <div className="min-h-screen bg-gray-100 p-6 flex justify-center">
+      <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-2xl">
+        <h1 className="text-2xl font-bold mb-4">
+          Storyline Studios Booking
+        </h1>
 
-      {step === 1 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Step 1: Contact Info</h2>
-          <input className="auth-input" placeholder="Full Name" onChange={e => updateField('name', e.target.value)} />
-          <input className="auth-input" placeholder="Email" onChange={e => updateField('email', e.target.value)} />
-          <input className="auth-input" placeholder="Phone" onChange={e => updateField('phone', e.target.value)} />
-          <button onClick={nextStep} className="auth-btn">Next</button>
+        {/* FORM */}
+        <div className="grid gap-3">
+          <input
+            name="name"
+            placeholder="Full Name"
+            className="p-2 border rounded"
+            onChange={handleChange}
+          />
+          <input
+            name="email"
+            placeholder="Email"
+            className="p-2 border rounded"
+            onChange={handleChange}
+          />
+          <input
+            name="phone"
+            placeholder="Phone"
+            className="p-2 border rounded"
+            onChange={handleChange}
+          />
+          <input
+            type="date"
+            name="date"
+            className="p-2 border rounded"
+            onChange={handleChange}
+          />
+          <input
+            name="eventLocation"
+            placeholder="Event Location"
+            className="p-2 border rounded"
+            onChange={handleChange}
+          />
+          <input
+            name="eventType"
+            placeholder="Event Type"
+            className="p-2 border rounded"
+            onChange={handleChange}
+          />
+          <input
+            name="age"
+            placeholder="Age"
+            className="p-2 border rounded"
+            onChange={handleChange}
+          />
         </div>
-      )}
 
-      {step === 2 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Step 2: Event Details</h2>
-          <input className="auth-input" placeholder="Event Type (e.g. Wedding)" onChange={e => updateField('eventType', e.target.value)} />
-          <input className="auth-input" placeholder="Event Location" onChange={e => updateField('eventLocation', e.target.value)} />
-          <div className="flex gap-2">
-            <button onClick={prevStep} className="auth-btn bg-gray-700">Back</button>
-            <button onClick={nextStep} className="auth-btn">Next</button>
-          </div>
-        </div>
-      )}
-
-      {step === 3 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Step 3: Pick a Date</h2>
-          <input type="date" className="auth-input" onChange={e => updateField('date', e.target.value)} />
-          <div className="flex gap-2">
-            <button onClick={prevStep} className="auth-btn bg-gray-700">Back</button>
-            <button onClick={nextStep} className="auth-btn">Next</button>
-          </div>
-        </div>
-      )}
-
-      {step === 4 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Step 4: Select Package</h2>
-          {packages.map(pkg => (
-            <div key={pkg.type} onClick={() => setPackageSelected(pkg)} className={`p-4 border-2 rounded-xl cursor-pointer ${packageSelected?.type === pkg.type ? 'border-cyan-500 bg-cyan-900/20' : 'border-gray-700'}`}>
-              <h3 className="font-bold">Package {pkg.type} - ₱{pkg.price}</h3>
+        {/* PACKAGES */}
+        <h2 className="text-lg font-semibold mt-6 mb-2">
+          Select Package
+        </h2>
+        <div className="grid gap-3">
+          {packages.map((pkg, i) => (
+            <div
+              key={i}
+              onClick={() => setSelectedPackage(pkg)}
+              className={`p-3 border rounded cursor-pointer ${
+                selectedPackage?.type === pkg.type
+                  ? "border-blue-500 bg-blue-50"
+                  : ""
+              }`}
+            >
+              <h3 className="font-bold">{pkg.type}</h3>
+              <p>₱{pkg.price}</p>
+              <ul className="text-sm">
+                {pkg.inclusions.map((inc, idx) => (
+                  <li key={idx}>• {inc}</li>
+                ))}
+              </ul>
             </div>
           ))}
-          <div className="flex gap-2">
-            <button onClick={prevStep} className="auth-btn bg-gray-700">Back</button>
-            <button onClick={nextStep} disabled={!packageSelected} className="auth-btn">Next</button>
-          </div>
         </div>
-      )}
 
-      {step === 5 && (
-        <div className="space-y-6 text-center">
-          <h2 className="text-2xl font-bold text-emerald-400">Step 5: Payment</h2>
-          <div className="p-4 bg-white/10 rounded-xl">
-            <img src="/IMG_7162.jpg" alt="GCash QR" className="w-64 h-64 mx-auto rounded-lg" />
-            <p className="mt-2 text-sm text-gray-400">Pay ₱1,000 to reserve your slot</p>
-          </div>
-          <input type="file" onChange={handleReceiptUpload} className="auth-input" />
-          {receiptUrl && <p className="text-green-400">✅ Receipt uploaded!</p>}
-          <div className="flex gap-2">
-            <button onClick={prevStep} className="auth-btn bg-gray-700">Back</button>
-            <button onClick={submitBooking} disabled={!receiptUrl || isUploading} className="auth-btn bg-emerald-600">
-              {isUploading ? "Processing..." : "Confirm Booking"}
-            </button>
-          </div>
+        {/* QR CODE */}
+        <div className="mt-6 text-center">
+          <p className="mb-2 font-medium">Scan to Pay</p>
+          <img
+            src="/IMG_7162.jpg" // ✅ FIXED PATH
+            alt="QR Code"
+            className="w-40 mx-auto"
+          />
         </div>
-      )}
+
+        {/* RECEIPT UPLOAD */}
+        <div className="mt-4">
+          <input
+            type="file"
+            onChange={(e) => setReceipt(e.target.files[0])}
+          />
+        </div>
+
+        {/* SUBMIT */}
+        <button
+          onClick={submitBooking}
+          disabled={loading}
+          className="mt-6 w-full bg-black text-white py-2 rounded hover:bg-gray-800"
+        >
+          {loading ? "Processing..." : "Confirm Booking"}
+        </button>
+      </div>
     </div>
   );
-};
-
-export default BookingFlow;
+}
