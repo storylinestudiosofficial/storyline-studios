@@ -74,4 +74,12 @@ async function uploadToCloudinary(filePath) {
   }
 }
 const PORT = process.env.PORT || 5000;
+const path = require('path');
+
+// Eto ang magsasabi sa server na "serve" ang frontend files
+app.use(express.static(path.join(__dirname, 'client/dist'))); // O kung nasaan ang index.html mo
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+});
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
