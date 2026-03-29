@@ -1,111 +1,152 @@
-{/* ✅ STEP 5: PAYMENT + QR + CLOUDINARY UPLOAD */}
-{step === 5 && (
-  <div className="max-w-2xl mx-auto space-y-8">
-    <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent">
-      💳 Secure Your ₱1,000 Reservation
-    </h2>
+import React, { useState, useEffect } from 'react';
+
+const BookingFlow = () => {
+  const [step, setStep] = useState(1);
+  const [isUploading, setIsUploading] = useState(false);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [packageSelected, setPackageSelected] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '', email: '', phone: '', date: '', eventLocation: '', eventType: ''
+  });
+
+  const packages = [
+    { type: 'A', price: 2399, inclusions: ['1 Photographer', '2hrs coverage', '10 edited photos'] },
+    { type: 'B', price: 4000, inclusions: ['1 Photographer', '4hrs coverage', '25 edited photos'] },
+    { type: 'C', price: 6000, inclusions: ['2 Photographers', '6hrs coverage', '50 edited photos'] },
+    { type: 'D', price: 7999, inclusions: ['2 Photographers + Video', '8hrs coverage', 'All raw files'] }
+  ];
+
+  const updateField = (key, value) => setFormData(prev => ({ ...prev, [key]: value }));
+  const nextStep = () => setStep(step + 1);
+  const prevStep = () => setStep(step - 1);
+
+  // CLOUDINARY UPLOAD LOGIC
+  const handleReceiptUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setReceiptFile(file);
+    setIsUploading(true);
+
+    const data = new FormData();
+    data.append('file', file);
+    data.append('upload_preset', 'storyline_receipts'); // SIGURADUHIN NA TAMA ITO SA CLOUDINARY MO
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload`, { // PALITAN MO YUNG YOUR_CLOUD_NAME
+        method: 'POST',
+        body: data
+      });
+      const fileData = await res.json();
+      setReceiptUrl(fileData.secure_url);
+    } catch (err) {
+      alert("Upload failed. Check your internet or Cloudinary settings.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const submitPayment = async () => {
+    if (!receiptUrl) return alert("Please wait for the receipt to finish uploading.");
     
-    {/* Package Summary */}
-    <div className="p-8 bg-gradient-to-br from-black/50 to-gray-900/50 border-2 border-cyan-400/30 rounded-3xl">
-      <h3 className="text-2xl font-bold mb-4 text-cyan-400">Your Package:</h3>
-      <div className="text-xl">
-        📦 Package {packageSelected?.type} – ₱{packageSelected?.price?.toLocaleString()}
-      </div>
-    </div>
+    const finalData = { ...formData, package: packageSelected, receiptUrl };
 
-    {/* ✅ GCASH QR CODE - VITE PUBLIC PATH */}
-    <div className="text-center p-8 bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border-2 border-emerald-400/30 rounded-3xl">
-      <div className="text-2xl font-bold mb-6 text-emerald-400 flex items-center justify-center">
-        📱 Scan QR Code → Pay ₱1,000
-      </div>
-      
-      {/* ✅ CORRECT VITE PUBLIC PATH */}
-      <div className="bg-white/20 p-8 rounded-3xl border-4 border-white/30 mx-auto max-w-md backdrop-blur-xl shadow-2xl">
-        <img 
-          src="/IMG_7162.jpg"  // ✅ Vite serves from public/ automatically
-          alt="Storyline Studios GCash QR Code"
-          className="w-72 h-72 mx-auto rounded-2xl shadow-xl border-4 border-white/50 object-contain"
-          onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/288x288/00d4ff/000000?text=GCash+QR';
-            console.log('QR fallback loaded');
-          }}
-        />
-      </div>
-      
-      <div className="mt-6 p-4 bg-black/60 rounded-2xl border border-emerald-400/50">
-        <div className="font-bold text-lg text-emerald-300 mb-2">Storyline Studios</div>
-        <div className="text-sm text-gray-300">09286675952</div>
-        <div className="text-xs text-gray-400 mt-2">Reservation Fee: ₱1,000</div>
-      </div>
-    </div>
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalData)
+      });
+      if (res.ok) {
+        alert("✅ Slot Reserved! See you at the shoot!");
+        window.location.href = "/";
+      }
+    } catch (err) {
+      alert("Error saving booking.");
+    }
+  };
 
-    {/* ✅ RECEIPT UPLOAD */}
-    <div className="p-8 bg-gradient-to-br from-gray-900/50 to-black/50 border-2 border-purple-500/30 rounded-3xl">
-      <label className="block text-2xl font-bold mb-6 text-purple-400 text-center">
-        📸 Upload Your Payment Receipt
-      </label>
-      
-      <div className="relative">
-        <input
-          id="receipt-upload"
-          type="file"
-          accept="image/jpeg,image/png,image/heic"
-          onChange={handleReceiptUpload}
-          className="w-full p-8 text-xl bg-black/60 border-4 border-dashed border-purple-500/50 rounded-3xl file:mr-6 file:py-4 file:px-10 file:rounded-2xl file:border-0 file:font-bold file:bg-gradient-to-r file:from-purple-500 file:to-purple-600 file:text-lg file:text-white file:shadow-lg hover:file:shadow-xl hover:file:from-purple-600 hover:file:to-purple-700 cursor-pointer transition-all duration-300 focus:outline-none focus:border-purple-400"
-          required
-        />
-        
-        {receiptFile && (
-          <div className="mt-6 p-6 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-400/50 rounded-2xl animate-pulse">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-bold text-lg text-green-400">✅ Receipt Ready</div>
-                <div className="text-green-300">{receiptFile.name}</div>
-                <div className="text-sm text-green-200">Size: {(receiptFile.size / 1024).toFixed(1)} KB</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReceiptFile(null)}
-                className="px-4 py-2 bg-red-500/80 hover:bg-red-600 text-white rounded-xl text-sm font-bold transition-colors"
-              >
-                ✕ Remove
-              </button>
-            </div>
+  return (
+    <div className="min-h-screen py-20 px-4 max-w-4xl mx-auto text-white">
+      {/* STEP 1: NAME */}
+      {step === 1 && (
+        <div className="space-y-6 text-center">
+          <h2 className="text-4xl font-bold">Step 1: Your Name</h2>
+          <input className="auth-input" placeholder="Full Name" onChange={e => updateField('name', e.target.value)} />
+          <button onClick={nextStep} className="auth-btn">Next</button>
+        </div>
+      )}
+
+      {/* STEP 2: CONTACT */}
+      {step === 2 && (
+        <div className="space-y-6 text-center">
+          <h2 className="text-4xl font-bold">Step 2: Contact Info</h2>
+          <input className="auth-input" placeholder="Email" onChange={e => updateField('email', e.target.value)} />
+          <input className="auth-input" placeholder="Phone" onChange={e => updateField('phone', e.target.value)} />
+          <div className="flex gap-4">
+            <button onClick={prevStep} className="bg-gray-700 p-4 rounded-xl flex-1">Back</button>
+            <button onClick={nextStep} className="auth-btn flex-1">Next</button>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
 
-    {/* Action Buttons */}
-    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-      <button
-        onClick={prevStep}
-        className="flex-1 px-12 py-6 bg-gray-800/60 hover:bg-gray-700/80 border-2 border-gray-600/50 rounded-3xl font-bold text-xl transition-all duration-300 hover:scale-105"
-      >
-        ← Back to Packages
-      </button>
-      <button
-        onClick={submitPayment}
-        disabled={!receiptFile || isUploading}
-        className="flex-1 px-12 py-6 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-emerald-400/50 rounded-3xl font-bold text-xl shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center"
-      >
-        {isUploading ? (
-          <>
-            <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full mr-3" />
-            Verifying Payment...
-          </>
-        ) : (
-          '✅ Confirm & Reserve Slot'
-        )}
-      </button>
-    </div>
+      {/* STEP 3: EVENT DETAILS */}
+      {step === 3 && (
+        <div className="space-y-6 text-center">
+          <h2 className="text-4xl font-bold">Step 3: Event Details</h2>
+          <input type="date" className="auth-input" onChange={e => updateField('date', e.target.value)} />
+          <input className="auth-input" placeholder="Location" onChange={e => updateField('eventLocation', e.target.value)} />
+          <div className="flex gap-4">
+            <button onClick={prevStep} className="bg-gray-700 p-4 rounded-xl flex-1">Back</button>
+            <button onClick={nextStep} className="auth-btn flex-1">Next</button>
+          </div>
+        </div>
+      )}
 
-    {/* Success Message */}
-    {isUploading && (
-      <div className="p-6 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-400/50 rounded-3xl text-center">
-        <div className="text-lg font-bold text-blue-300 mb-2">⏳ Processing...</div>
-        <div className="text-blue-200">Receipt uploading to Cloudinary → Saving to database → Slot reserved!</div>
-      </div>
-    )}
-  </div>
-)}
+      {/* STEP 4: PACKAGES */}
+      {step === 4 && (
+        <div className="space-y-6">
+          <h2 className="text-4xl font-bold text-center">Step 4: Select Package</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {packages.map(pkg => (
+              <div key={pkg.type} onClick={() => setPackageSelected(pkg)} className={`p-6 border-2 rounded-2xl cursor-pointer ${packageSelected?.type === pkg.type ? 'border-cyan-400 bg-cyan-900/20' : 'border-gray-800'}`}>
+                <h3 className="text-2xl font-bold">Package {pkg.type}</h3>
+                <p className="text-xl">₱{pkg.price.toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4">
+            <button onClick={prevStep} className="bg-gray-700 p-4 rounded-xl flex-1">Back</button>
+            <button onClick={nextStep} disabled={!packageSelected} className="auth-btn flex-1">Next to Payment</button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 5: PAYMENT (ITO YUNG PINAKITA MO) */}
+      {step === 5 && (
+        <div className="max-w-2xl mx-auto space-y-8">
+          <h2 className="text-4xl md:text-5xl font-bold text-center bg-emerald-400 bg-clip-text text-transparent">
+            💳 Secure Your ₱1,000 Reservation
+          </h2>
+          <div className="text-center p-8 bg-black/50 border-2 border-emerald-400/30 rounded-3xl">
+            <img src="/IMG_7162.jpg" alt="QR Code" className="w-72 h-72 mx-auto rounded-2xl mb-6" />
+            <div className="text-lg text-emerald-300">Storyline Studios | 09286675952</div>
+          </div>
+          <div className="p-8 border-2 border-purple-500/30 rounded-3xl text-center">
+            <label className="block text-xl font-bold mb-4 text-purple-400">Upload Receipt Screenshot</label>
+            <input type="file" onChange={handleReceiptUpload} className="w-full" required />
+            {receiptFile && <p className="mt-2 text-green-400">✅ {receiptFile.name}</p>}
+          </div>
+          <div className="flex gap-4">
+            <button onClick={prevStep} className="bg-gray-700 p-4 rounded-xl flex-1">Back</button>
+            <button onClick={submitPayment} disabled={!receiptUrl || isUploading} className="auth-btn flex-1">
+              {isUploading ? "Uploading..." : "Confirm & Reserve Slot"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default BookingFlow; // ✅ CRITICAL: ITO ANG EXIT DOOR NG CODE MO
