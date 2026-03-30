@@ -74,7 +74,6 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// 2. Pagkatapos ng Transporter, tsaka susunod yung PATCH Route (yung pinadala mo)
 app.patch('/api/bookings/confirm/:id', async (req, res) => {
   try {
     const booking = await Booking.findByIdAndUpdate(
@@ -85,20 +84,37 @@ app.patch('/api/bookings/confirm/:id', async (req, res) => {
 
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
+    // 📩 Eto yung mail details
     const mailOptions = {
       from: '"Storyline Studios" <zayofficialportfolio@gmail.com>',
       to: booking.email,
       subject: '✅ Booking Confirmed - Storyline Studios',
-      // ... (tuloy-tuloy na yung html code dito)
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #000; border: 1px solid #eee; border-radius: 10px;">
+          <h1 style="color: #00d4ff;">Booking Confirmed!</h1>
+          <p>Hi <strong>${booking.name}</strong>,</p>
+          <p>Good news! Your booking for <strong>${booking.eventType}</strong> has been officially <strong>VERIFIED</strong>.</p>
+          <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p>📅 <strong>Date:</strong> ${new Date(booking.date).toLocaleDateString()}</p>
+            <p>📍 <strong>Location:</strong> ${booking.eventLocation}</p>
+            <p>💰 <strong>Package:</strong> ${booking.package.type}</p>
+          </div>
+          <p>Thank you for choosing Storyline Studios. See you soon!</p>
+          <hr style="border: none; border-top: 1px solid #eee;" />
+          <p style="font-size: 12px; color: #666;">This is an automated message from Storyline Studios Booking System.</p>
+        </div>
+      `
     };
 
-    // Ito ang mag-uutos sa transporter na i-send ang mail
+    // 🚀 Ito ang magpapadala ng email
     await transporter.sendMail(mailOptions);
+    
+    console.log(`✅ Email sent to ${booking.email}`);
     res.status(200).json({ message: 'Confirmed and Email Sent!' });
 
   } catch (error) {
-    console.error("Email Error:", error);
-    res.status(500).json({ message: 'Error confirming booking' });
+    console.error("❌ Server Error:", error);
+    res.status(500).json({ message: 'Error confirming booking: ' + error.message });
   }
 });
 
