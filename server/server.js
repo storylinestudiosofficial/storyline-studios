@@ -72,7 +72,7 @@ app.get('/api/calendar', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-app.patch('/api/bookings/confirm/:id', async (req, res) => {
+app.patch('/api/bookings/confirm/:id', async (req, res) => { 
   try {
     const booking = await Booking.findByIdAndUpdate(
       req.params.id, 
@@ -86,20 +86,20 @@ app.patch('/api/bookings/confirm/:id', async (req, res) => {
       from: '"Storyline Studios" <zayofficialportfolio@gmail.com>',
       to: booking.email,
       subject: '✅ Booking Confirmed - Storyline Studios',
-      html: `
-        <div style="font-family: sans-serif; padding: 20px; color: #333; border: 1px solid #ddd; border-radius: 8px;">
-          <h1 style="color: #00d4ff;">Booking Confirmed!</h1>
-          <p>Hi <strong>${booking.name}</strong>,</p>
-          <p>Your booking for <strong>${booking.eventType}</strong> has been officially <strong>VERIFIED</strong>.</p>
-          <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p>📅 <strong>Date:</strong> ${new Date(booking.date).toLocaleDateString()}</p>
-            <p>📍 <strong>Location:</strong> ${booking.eventLocation}</p>
-          </div>
-          <p>Thank you! <br /> <strong>Storyline Studios Team</strong></p>
-        </div>
-      `
+      html: `<h1>Booking Confirmed!</h1><p>Hi ${booking.name}, verified na po ang booking niyo.</p>`
     };
 
+    // Dito nag-error kasi walang 'async' sa taas
+    await transporter.sendMail(mailOptions);
+    
+    console.log(`✅ Email sent to ${booking.email}`);
+    res.status(200).json({ message: 'Confirmed and Email Sent!' });
+
+  } catch (error) {
+    console.error("❌ Error:", error);
+    res.status(500).json({ message: 'Error: ' + error.message });
+  }
+});
     // 🚀 I-send na ang email
     await transporter.sendMail(mailOptions);
     
