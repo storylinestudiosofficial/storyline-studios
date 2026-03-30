@@ -67,10 +67,15 @@ app.get('/api/calendar', async (req, res) => {
   }
 });// 1. Dito mo i-setup ang Transporter (Dito ang Password)
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // true para sa port 465
   auth: {
-    user: 'zayofficialportfolio@gmail.com', // Ang email mo
-    pass: 'lkomihuqpsfuwavg'               // <--- DITO MO ILALAGAY YUNG 16-DIGIT APP PASSWORD
+    user: 'zayofficialportfolio@gmail.com',
+    pass: 'lkomihuqpsfuwavg'
+  },
+  tls: {
+    rejectUnauthorized: false // Para hindi ma-block ng security ng Render/Google
   }
 });
 
