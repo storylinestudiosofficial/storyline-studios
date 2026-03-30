@@ -146,6 +146,18 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
+// ✅ 3. ADMIN BOOKINGS ROUTE (DITO KUKUHA NG DATA ANG DASHBOARD)
+app.get('/api/admin/bookings', async (req, res) => {
+  try {
+    // Kukunin lahat ng bookings mula sa pinakabago
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 // ✅ CATCH-ALL ROUTE for React Router (MUST BE LAST)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
