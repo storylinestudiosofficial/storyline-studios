@@ -69,13 +69,13 @@ app.get('/api/calendar', async (req, res) => {
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
-  secure: true, // true para sa port 465
+  secure: true, // Mas stable ito sa Render kaysa sa port 587
   auth: {
     user: 'zayofficialportfolio@gmail.com',
     pass: 'lkomihuqpsfuwavg'
   },
   tls: {
-    rejectUnauthorized: false // Para hindi ma-block ng security ng Render/Google
+    rejectUnauthorized: false // Pinaka-importante para sa connection timeout fix
   }
 });
 
