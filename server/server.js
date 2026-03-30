@@ -1,3 +1,88 @@
+const nodemailer = require('nodemailer');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const path = require('path');
+const cloudinary = require('cloudinary').v2;
+require('dotenv').config();
+
+const app = express();
+
+// 🔹 Middleware
+app.use(cors({
+  origin: ['https://storyline-studios.onrender.com', 'http://localhost:5173']
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 🔹 Serve static files from client/dist (RENDER MONOLITH)
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// 🔹 Cloudinary Config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// 🔹 MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => console.error('❌ MongoDB Error:', err));
+
+// ✅ BOOKING SCHEMA
+const bookingSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
+  date: { type: Date, required: true },
+  eventLocation: { type: String, required: true },
+  eventType: String,
+  age: Number,
+  package: {
+    type: { type: String, required: true },
+    price: { type: Number, required: true },
+    inclusions: [String]
+  },
+  receiptUrl: { type: String, required: true },
+  total: Number,
+  status: {
+    paid: { type: Boolean, default: false },
+    verified: { type: Boolean, default: false }
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Booking = mongoose.model('Booking', bookingSchema);
+
+// ✅ NODEMAILER TRANSPORTER (FIXED TIMEOUT & PORT)
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, 
+  auth: {
+    user: 'zayofficialportfolio@gmail.com',
+    pass: 'lkomihuqpsfuwavg'
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+// ✅ API ROUTES
+
+// 1. Get Blocked Dates for Calendar
+app.get('/api/calendar', async (req, res) => {
+  try {
+    const bookings = await Booking.find({ 'status.verified': true });
+    const dates = bookings.map(b => new Date(b.date).toISOString().split('T')[0]);
+    res.json(dates);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2. Confirm Booking & Send Email (FIXED ASYNC/AWAIT)
 app.patch('/api/bookings/confirm/:id', async (req, res) => {
   try {
     const booking = await Booking.findByIdAndUpdate(
@@ -13,21 +98,64 @@ app.patch('/api/bookings/confirm/:id', async (req, res) => {
       to: booking.email,
       subject: '✅ Booking Confirmed - Storyline Studios',
       html: `
-        <div style="font-family: sans-serif; padding: 20px;">
-          <h2>Booking Confirmed!</h2>
-          <p>Hi ${booking.name}, verified na po ang inyong schedule.</p>
+        <div style="font-family: sans-serif; padding: 20px; color: #333; border: 1px solid #ddd; border-radius: 8px;">
+          <h1 style="color: #00d4ff;">Booking Confirmed!</h1>
+          <p>Hi <strong>${booking.name}</strong>,</p>
+          <p>Your booking for <strong>${booking.eventType}</strong> has been officially <strong>VERIFIED</strong>.</p>
+          <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p>📅 <strong>Date:</strong> ${new Date(booking.date).toLocaleDateString()}</p>
+            <p>📍 <strong>Location:</strong> ${booking.eventLocation}</p>
+            <p>💰 <strong>Package:</strong> ${booking.package.type}</p>
+          </div>
+          <p>Thank you for choosing Storyline Studios! See you there!</p>
+          <hr style="border:none; border-top: 1px solid #eee;"/>
+          <p style="font-size: 12px; color: #999;">This is an automated message from Storyline Studios.</p>
         </div>
       `
     };
 
-    // Ito yung line 104 na nag-error
     await transporter.sendMail(mailOptions);
-    
     console.log(`✅ Email sent to ${booking.email}`);
     res.status(200).json({ message: 'Confirmed and Email Sent!' });
 
   } catch (error) {
-    console.error("❌ Server Error:", error);
-    res.status(500).json({ message: 'Error: ' + error.message });
+    console.error("❌ Email Error:", error);
+    res.status(500).json({ message: 'Error confirming booking: ' + error.message });
   }
+});
+
+// 3. Admin: Fetch All Bookings
+app.get('/api/admin/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 4. Client: Submit New Booking
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const booking = new Booking({
+      ...req.body,
+      date: new Date(req.body.date)
+    });
+    await booking.save();
+    res.json({ success: true, id: booking._id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🔹 CATCH-ALL ROUTE (MUST BE LAST)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
+// 🔹 Start Server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Storyline Studios running on port ${PORT}`);
+  console.log(`✅ Ready for production!`);
 });
