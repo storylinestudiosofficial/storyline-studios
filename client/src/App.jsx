@@ -6,7 +6,6 @@ import BookingFlow from './pages/BookingFlow';
 import ClientPortal from './pages/ClientPortal';
 import AdminDashboard from './pages/AdminDashboard';
 import { AuthProvider } from './context/AuthContext';
-import Admin from "./pages/Admin";
 
 // Tool ito para bumalik sa taas ang page kapag lumilipat ng view
 function ScrollToTop() {
