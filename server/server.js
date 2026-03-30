@@ -59,26 +59,19 @@ const Booking = mongoose.model('Booking', bookingSchema);
 // ✅ API ROUTES
 app.get('/api/calendar', async (req, res) => {
   try {
+    // Kukunin lang ang dates na VERIFIED na
     const bookings = await Booking.find({ 'status.verified': true });
-    const dates = bookings.map(b => new Date(b.date).toISOString().split('T')[0]);
-    res.json(dates);
+    
+    // I-format ang dates para maging YYYY-MM-DD
+    const blockedDates = bookings.map(b => 
+      new Date(b.date).toISOString().split('T')[0]
+    );
+    
+    res.json(blockedDates);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});// 1. Dito mo i-setup ang Transporter (Dito ang Password)
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // Mas stable ito sa Render kaysa sa port 587
-  auth: {
-    user: 'zayofficialportfolio@gmail.com',
-    pass: 'lkomihuqpsfuwavg'
-  },
-  tls: {
-    rejectUnauthorized: false // Pinaka-importante para sa connection timeout fix
-  }
 });
-
 app.patch('/api/bookings/confirm/:id', async (req, res) => {
   try {
     const booking = await Booking.findByIdAndUpdate(
