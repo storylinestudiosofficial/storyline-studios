@@ -89,27 +89,35 @@ app.patch('/api/bookings/confirm/:id', async (req, res) => {
 
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    // 📩 Eto yung mail details
     const mailOptions = {
       from: '"Storyline Studios" <zayofficialportfolio@gmail.com>',
       to: booking.email,
       subject: '✅ Booking Confirmed - Storyline Studios',
       html: `
-        <div style="font-family: sans-serif; padding: 20px; color: #000; border: 1px solid #eee; border-radius: 10px;">
+        <div style="font-family: sans-serif; padding: 20px; color: #333; border: 1px solid #ddd; border-radius: 8px;">
           <h1 style="color: #00d4ff;">Booking Confirmed!</h1>
           <p>Hi <strong>${booking.name}</strong>,</p>
-          <p>Good news! Your booking for <strong>${booking.eventType}</strong> has been officially <strong>VERIFIED</strong>.</p>
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p>Your booking for <strong>${booking.eventType}</strong> has been officially <strong>VERIFIED</strong>.</p>
+          <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <p>📅 <strong>Date:</strong> ${new Date(booking.date).toLocaleDateString()}</p>
             <p>📍 <strong>Location:</strong> ${booking.eventLocation}</p>
-            <p>💰 <strong>Package:</strong> ${booking.package.type}</p>
           </div>
-          <p>Thank you for choosing Storyline Studios. See you soon!</p>
-          <hr style="border: none; border-top: 1px solid #eee;" />
-          <p style="font-size: 12px; color: #666;">This is an automated message from Storyline Studios Booking System.</p>
+          <p>Thank you! <br /> <strong>Storyline Studios Team</strong></p>
         </div>
       `
     };
+
+    // 🚀 I-send na ang email
+    await transporter.sendMail(mailOptions);
+    
+    console.log(`✅ SUCCESS: Email sent to ${booking.email}`);
+    res.status(200).json({ message: 'Confirmed and Email Sent!' });
+
+  } catch (error) {
+    console.error("❌ NODEMAILER ERROR:", error);
+    res.status(500).json({ message: 'Error: ' + error.message });
+  }
+});
 
     // 🚀 Ito ang magpapadala ng email
     await transporter.sendMail(mailOptions);
